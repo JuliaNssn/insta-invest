@@ -1,5 +1,6 @@
 const puppy = require('puppeteer');
 const nodemailer = require('nodemailer');
+const moment = require('moment'); // require
 
 require('dotenv').config();
 
@@ -74,12 +75,12 @@ async function checkAvailability(investEntity) {
         break;
     }
 
-    console.log(availability);
+    console.log('[' + moment().format('DD.MM.YYY HH:mm:ss') + ']:', investEntity.name + ' -', availability);
 
     if (availability != null && !availability.includes(investEntity.triggerWord)) {
       investEntity.lastTimeAvailable = Date.now();
 
-      console.log(investEntity.name, 'GOGOGOGOGO');
+      console.log('[' + moment().format('DD.MM.YYY HH:mm:ss') + ']:', investEntity.name, 'GOGOGOGOGO');
       sendMail(investEntity);
     }
 
