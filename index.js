@@ -1,16 +1,41 @@
-const puppy = require("puppeteer");
-const nodemailer = require("nodemailer");
+const puppy = require('puppeteer');
+const nodemailer = require('nodemailer');
 
-require("dotenv").config();
+require('dotenv').config();
 
-const link =
-  "https://www.amazon.de/Sony-Interactive-Entertainment-PlayStation-5/dp/B08H93ZRK9/";
+class InvestEntity {
+  constructor(id, name, link, emails, triggerWord, lastTimeAvailable) {
+    this.id = id;
+    this.name = name;
+    this.link = link;
+    this.emails = emails;
+    this.triggerWord = triggerWord;
+    this.lastTimeAvailable = lastTimeAvailable;
+  }
+}
 
-var lastTimeAvailable;
+const investies = [
+  new InvestEntity(
+    0,
+    'PS 5',
+    'https://www.amazon.de/Sony-Interactive-Entertainment-PlayStation-5/dp/B08H93ZRK9/',
+    ['r.schramowski@googlemail.com', 'j.nissen@outlook.de', 'n.lipinski@web.de', 'p.schulz@eprivacy.eu'],
+    'nicht',
+    null
+  ),
+  new InvestEntity(
+    1,
+    'Paddys Laptop',
+    'https://www.mediamarkt.de/de/product/_hp-15s-eq0355ng-2673915.html',
+    ['p.schulz@eprivacy.eu'],
+    'lol', //'Leider keine Lieferung',
+    null
+  ),
+];
 
-function sendMail() {
+function sendMail(investEntity) {
   let transporter = nodemailer.createTransport({
-    host: "securesmtp.t-online.de",
+    host: 'securesmtp.t-online.de',
     port: 465,
     secure: true,
     auth: {
@@ -20,34 +45,48 @@ function sendMail() {
   });
 
   transporter.sendMail({
-    from: `"PS5 Mailer" <${process.env.FROMMAILUSER}>`,
-    to: `${process.env.USER1MAIL}, ${process.env.USER2MAIL}`,
-    subject: "PS5 Now available",
-    text: link,
-    html: `<a href='${link}'>${link}</a>`,
+    from: `"Insta-Invest Mailer" <${process.env.FROMMAILUSER}>`,
+    to: investEntity.emails.join(','),
+    subject: investEntity.name + ' available!',
+    text: investEntity.link,
+    html: `<a href='${investEntity.link}'>${investEntity.link}</a>`,
   });
 }
 
-async function checkAvailability() {
-  if (!lastTimeAvailable || Date.now() - lastTimeAvailable > 43200000) {
+async function checkAvailability(investEntity) {
+  if (!investEntity.lastTimeAvailable || Date.now() - investEntity.lastTimeAvailable > 43200000) {
     const browser = await puppy.launch();
     const page = await browser.newPage();
-    await page.goto(link);
 
-    const availability = await page.$eval(
-      "div#availability .a-size-medium",
-      (el) => el.innerHTML.trim()
-    );
+    await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
 
-    if (!availability.includes("nicht")) {
-      lastTimeAvailable = Date.now();
+    await page.goto(investEntity.link);
 
-      sendMail();
+    var availability;
+
+    switch (investEntity.id) {
+      case 0:
+        availability = await page.$eval('div#availability .a-size-medium', (el) => el.innerHTML.trim());
+        break;
+      case 1:
+        const divContainer = await page.$('[data-test="mms-delivery-online-availability"]');
+        availability = await divContainer.$eval('div', (el) => el.innerHTML.trim().split('>')[1].split('<')[0]);
+        break;
+    }
+
+    console.log(availability);
+
+    if (availability != null && !availability.includes(investEntity.triggerWord)) {
+      investEntity.lastTimeAvailable = Date.now();
+
+      console.log(investEntity.name, 'GOGOGOGOGO');
+      sendMail(investEntity);
     }
 
     await browser.close();
   }
-  setTimeout(() => checkAvailability(), 5000);
+
+  setTimeout(() => checkAvailability(investEntity), 5000);
 }
 
-checkAvailability();
+investies.forEach((investEntity) => checkAvailability(investEntity));
