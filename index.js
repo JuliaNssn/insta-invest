@@ -62,10 +62,15 @@ async function checkAvailability(investEntity) {
 
     await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
     await page.setCookie(...JSON.parse(process.env.COOKIESFORPAGES));
-    await page.send('Network.emulateNetworkConditions', {
+
+    // Connect to Chrome DevTools
+    const client = await page.target().createCDPSession();
+
+    // Set throttling property
+    await client.send('Network.emulateNetworkConditions', {
       offline: false,
-      downloadThroughput: (200 * 1024) / 8,
-      uploadThroughput: (200 * 1024) / 8,
+      downloadThroughput: (2000 * 1024) / 8,
+      uploadThroughput: (2000 * 1024) / 8,
       latency: 20,
     });
 
