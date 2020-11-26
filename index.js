@@ -62,6 +62,12 @@ async function checkAvailability(investEntity) {
 
     await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
     await page.setCookie(...JSON.parse(process.env.COOKIESFORPAGES));
+    await page.send('Network.emulateNetworkConditions', {
+      offline: false,
+      downloadThroughput: (200 * 1024) / 8,
+      uploadThroughput: (200 * 1024) / 8,
+      latency: 20,
+    });
 
     await page.goto(investEntity.link, { waitUntil: 'networkidle2' });
 
