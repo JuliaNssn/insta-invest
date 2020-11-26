@@ -67,11 +67,12 @@ async function checkAvailability(investEntity) {
     const client = await page.target().createCDPSession();
 
     // Set throttling property
+    // https://fdalvi.github.io/blog/2018-02-05-puppeteer-network-throttle/
     await client.send('Network.emulateNetworkConditions', {
       offline: false,
-      downloadThroughput: (2000 * 1024) / 8,
-      uploadThroughput: (2000 * 1024) / 8,
-      latency: 20,
+      downloadThroughput: (4 * 1024 * 1024) / 8,
+      uploadThroughput: (1 * 1024 * 1024) / 8,
+      latency: 40,
     });
 
     await page.goto(investEntity.link, { waitUntil: 'networkidle2' });
