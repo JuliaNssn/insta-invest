@@ -57,21 +57,21 @@ async function sendMail(investEntity) {
 
 async function checkAvailability(investEntity) {
   if (!investEntity.lastTimeAvailable || Date.now() - investEntity.lastTimeAvailable > 43200000) {
-    const browser = await puppy.launch({ args: ['--no-sandbox'] });
+    const browser = await puppy.launch({ slowMo: 500, args: ['--no-sandbox'] });
     const page = await browser.newPage();
 
     await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
     await page.setCookie(...JSON.parse(process.env.COOKIESFORPAGES));
 
+    await page.goto(investEntity.link, { waitUntil: 'networkidle2' });
+
     var availability;
 
     switch (investEntity.id) {
       case 0:
-        await page.goto(investEntity.link, { waitUntil: 'networkidle2' });
         availability = await page.$eval('div#availability .a-size-medium', (el) => el.innerHTML.trim());
         break;
       case 1:
-        await page.goto(investEntity.link, { waitUntil: 'networkidle2' });
         const divContainer = await page.$('[data-test="mms-delivery-online-availability"]');
         availability = await divContainer.$eval('div', (el) => el.innerHTML.trim().split('>')[1].split('<')[0]);
         break;
